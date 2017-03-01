@@ -4,7 +4,8 @@ weightWidget::weightWidget(QWidget *parent) : QWidget(parent)
 {
     //setStyleSheet("background-color:white;");
     weightResize(1,1);
-    activeRegion = size();
+    HRegionRatio=1.0;
+    VRegionRatio=1.0;
 }
 
 weightWidget::~weightWidget()
@@ -62,10 +63,8 @@ void weightWidget::weightResize(int cols, int rows)
     ROI.end=QPoint(0,0);
     orignROI.start=QPoint(0,0);
     orignROI.end=QPoint(0,0);
-    HRegionRatio=1;
-    VRegionRatio=1;
-    activeRegion=QSize(widgetWidth,widgetHeight);
-    //    qDebug()<<"+"<<activeRegion;
+    HRegionRatio=1.0;
+    VRegionRatio=1.0;
     changeMode(MODE_DEFAULT);//it run update() internally
 }
 
@@ -76,14 +75,6 @@ bool weightWidget::weightReflash(EzCamH3AWeight cfg)
     weightGenerate(cfg.width1,cfg.height1,cfg.h_start2,cfg.v_start2,cfg.width2,cfg.height2,cfg.weight,srcImg);
     orignROI.start=QPoint(cfg.h_start2,cfg.v_start2);
     orignROI.end=QPoint(cfg.width2+cfg.h_start2-1,cfg.height2+cfg.v_start2-1);
-    //    int cols,rows;
-    //    for(rows=0;rows<weightHeight;rows++)
-    //    {
-    //        for(cols=0;cols<weightWidth;cols++)
-    //        {
-    //            *((unsigned int*)editImg->bits()+rows*weightWidth+cols)=*(srcImg->bits()+rows*weightWidth+cols)==weightPrimary?mainColor.primary:mainColor.secondary;
-    //        }
-    //    }
     update();
     return true;
 }
@@ -195,9 +186,9 @@ void weightWidget::changeMode(PAINT_MODE mode)
 
 void weightWidget::setActiveRegion(QSize ac)
 {
-    activeRegion=ac;
     HRegionRatio=(qreal)ac.width()/(qreal)width();
     VRegionRatio=(qreal)ac.height()/(qreal)height();
+    qDebug()<<HRegionRatio<<VRegionRatio;
 }
 
 EzCamH3AWeight weightWidget::weightOutPut()
@@ -284,6 +275,7 @@ void weightWidget::paintEvent(QPaintEvent *event)
 
 void weightWidget::mousePressEvent(QMouseEvent *event)
 {
+
     if(event->button()==Qt::RightButton&&currentMode()!=MODE_DEFAULT)
     {
         //        weightGenerate();
@@ -301,8 +293,12 @@ void weightWidget::mousePressEvent(QMouseEvent *event)
         emit sendWeightInfo(weightOutPut());
         changeMode(MODE_DEFAULT);
     }
-    else if(event->button()==Qt::LeftButton&&event->pos().x()<activeRegion.width()&&event->pos().y()<activeRegion.height())
+    else if(event->button()==Qt::LeftButton)
     {
+        qreal HActive=(qreal)widgetWidth*HRegionRatio;
+        qreal VActive=(qreal)widgetHeight*VRegionRatio;
+        if(event->pos().x()>=HActive||event->pos().y()>=VActive)
+            return;
         qreal orignX = event->pos().x()/(HRatio*HRegionRatio);
         qreal orignY = event->pos().y()/(VRatio*VRegionRatio);
         QPoint orign(qFloor(orignX),qFloor(orignY));
@@ -327,27 +323,23 @@ void weightWidget::mouseMoveEvent(QMouseEvent *event)
 {
     if(event->buttons()&Qt::LeftButton&&curMode==MODE_CUSTOM)
     {
-        //        qDebug()<<activeRegion;
-        //        qDebug()<<event->pos();
-        //        qreal orignX = event->pos().x()/HRatio;
-        //        qreal orignY = event->pos().y()/VRatio;
-        //        QPoint orign(qFloor(orignX),qFloor(orignY));
+        qreal HActive=(qreal)widgetWidth*HRegionRatio;
+        qreal VActive=(qreal)widgetHeight*VRegionRatio;
         if(event->pos().x()<0)
             ROI.end.setX(0);
-        else if(event->pos().x()>=activeRegion.width())
-            ROI.end.setX(activeRegion.width()-1);
+        else if(event->pos().x()>=HActive)
+            ROI.end.setX(HActive-1);
         else
             ROI.end.setX(event->pos().x());
         if(event->pos().y()<0)
             ROI.end.setY(0);
-        else if(event->pos().y()>=activeRegion.height())
-            ROI.end.setY(activeRegion.height()-1);
+        else if(event->pos().y()>=VActive)
+            ROI.end.setY(VActive-1);
         else
             ROI.end.setY(event->pos().y());
         qreal orignX = ROI.end.x()/(HRatio*HRegionRatio);
         qreal orignY = ROI.end.y()/(VRatio*VRegionRatio);
         QPoint orign(qFloor(orignX),qFloor(orignY));
-//        qDebug()<<orign;
         orignROI.end=orign;
         update();
     }

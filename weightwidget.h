@@ -48,7 +48,8 @@ public:
     void editRecover(){*editImg=*editImg_bak;}
     void setWeight(int wt){curWeight = wt;}//set weightMap weight
     PAINT_MODE currentMode(){return curMode;}
-    void setActiveRegion(QSize);
+    void setActiveRegion(QSize);//covert to ratio need twice float division
+    void setActiveRegion(qreal hr,qreal vr){HRegionRatio = hr,VRegionRatio =vr;}//directly
     EzCamH3AWeight weightOutPut();
 
 signals:
@@ -84,7 +85,6 @@ private:
     qreal VRatio=1;
     qreal HRegionRatio=1;
     qreal VRegionRatio=1;
-    QSize activeRegion;
     QPoint lastMovePos;//covert into orign img position
     QPoint lastClickPos;//covert into orign img position
 
