@@ -12,6 +12,7 @@
 #include <QResizeEvent>
 #include <QtMath>
 #include <QRgb>
+#include <QBitmap>
 #include "ezstream.h"
 
 enum PAINT_MODE
@@ -22,8 +23,14 @@ enum PAINT_MODE
 
 typedef struct
 {
-    QRgb primary;
-    QRgb secondary;
+    QPoint start;
+    QPoint end;
+}Rect;
+
+typedef struct
+{
+    QColor primary;
+    QColor secondary;
 }colorGroup;
 
 class weightWidget : public QWidget
@@ -35,27 +42,30 @@ public:
     void weightResize(int cols,int rows);
     int weightSize(){return weightWidth*weightHeight;}
     bool weightReflash(EzCamH3AWeight cfg);
-    void weightGenerate(int width1,int height1,int h_start2,int v_start2,int width2,int height2,int weight,unsigned char* win_coeffs);//generate according EzCamH3AWeight
+    void weightGenerate(int width1,int height1,int h_start2,int v_start2,int width2,int height2,int weight,QImage* win_coeffs);//generate according EzCamH3AWeight
     void weightGenerate();//generate according optional setting
     void changeMode(PAINT_MODE);
     void editRecover(){*editImg=*editImg_bak;}
     void setWeight(int wt){curWeight = wt;}//set weightMap weight
     PAINT_MODE currentMode(){return curMode;}
+    void setActiveRegion(QSize);
+    EzCamH3AWeight weightOutPut();
 
 signals:
     void curPosInfo(QPoint,unsigned char);
+    void sendWeightInfo(EzCamH3AWeight);
 public slots:
 private:
     virtual void resizeEvent(QResizeEvent *event);
 
     void flip(QPoint);
-    void format(QPoint,QRgb);
+    void format(QPoint,QColor);
     unsigned char weightAt(QPoint);
 
     int weightWidth=1;
     int weightHeight=1;
-    //    int widgetWidth=0;
-    //    int widgetHeight=0;
+        int widgetWidth=0;
+        int widgetHeight=0;
     int weightPrimary = 0;
     int weightSecondary = 0;
     int pixelPrimary=0;
@@ -66,10 +76,15 @@ private:
     QImage* srcImg=NULL;//weight map
     QImage* editImg=NULL;
     QImage* editImg_bak=NULL;
-    colorGroup mainColor={0xFF795548,0xFFBDBDBD};
-
+    Rect ROI;
+    Rect orignROI;
+//    colorGroup mainColor={0xFF795548,0xFFBDBDBD};
+    colorGroup mainColor={QColor(198,40,40,200),QColor(0,0,0,0)};
     qreal HRatio=1;
     qreal VRatio=1;
+    qreal HRegionRatio=1;
+    qreal VRegionRatio=1;
+    QSize activeRegion;
     QPoint lastMovePos;//covert into orign img position
     QPoint lastClickPos;//covert into orign img position
 
